@@ -374,9 +374,21 @@ func runHelperScript(name string) error {
 	if err != nil {
 		return err
 	}
-	helperPath := filepath.Join(filepath.Dir(exePath), "helpers", name)
-	if _, err := os.Stat(helperPath); err != nil {
-		return fmt.Errorf("helper script not found at %s", helperPath)
+	exeDir := filepath.Dir(exePath)
+	candidates := []string{
+		filepath.Join(exeDir, "helpers", name),
+		filepath.Join(exeDir, "..", "helpers", name),
+	}
+
+	var helperPath string
+	for _, candidate := range candidates {
+		if _, statErr := os.Stat(candidate); statErr == nil {
+			helperPath = candidate
+			break
+		}
+	}
+	if helperPath == "" {
+		return fmt.Errorf("helper script not found; tried %s", strings.Join(candidates, ", "))
 	}
 	cmd := exec.Command("powershell.exe", "-ExecutionPolicy", "Bypass", "-File", helperPath)
 	cmd.Stdout = os.Stdout
