@@ -17,7 +17,7 @@
       <Image condition="image">ping.exe</Image>
       <Image condition="image">powershell.exe</Image>
       <Image condition="image">notepad.exe</Image>
-      <CommandLine condition="contains">sysmonsim-go</CommandLine>
+      <CommandLine condition="contains">sysmonsim</CommandLine>
       <CommandLine condition="contains">\sysmonsim-go\</CommandLine>
     </ProcessCreate>
 

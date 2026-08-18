@@ -78,7 +78,7 @@ go build -o bin\sysmonsim-go.exe .
 
 ## Sysmon config
 
-The repo includes a default lab config at `config\sysmon-sysmonsim-go.xml`. It is meant to favor visibility for `sysmonsim-go` testing rather than noise reduction.
+The repo includes a default lab config at `config\sysmon-sysmonsim-go.xml`. It is meant to favor `sysmonsim-go` testing while reducing unrelated host-wide noise.
 
 ### Enable built-in Sysmon on modern Windows
 
@@ -117,6 +117,8 @@ Notes:
 - Microsoft Learn currently documents the built-in optional-feature flow for Windows 11, not a separate Windows Server 2026 article.
 - On a 2026-era Windows build, confirm the feature is present with `Enable-WindowsOptionalFeature` and `sysmon -s` before assuming the built-in path is available.
 - Built-in Sysmon doesn't support coexistence with standalone Sysmon.
+- The included XML is intentionally narrower than a normal enterprise Sysmon config. It focuses on `sysmonsim-go.exe`, its default helper processes such as `cmd.exe`, `ping.exe`, `powershell.exe`, and `notepad.exe`, plus artifact paths containing `\sysmonsim-go\`.
+- If you override simulator defaults, you may need to update the XML to match your custom process names, DLLs, domains, registry paths, or pipe names.
 
 Apply it during install:
 
@@ -141,6 +143,7 @@ Notes:
 - The config uses `schemaversion="4.90"`, matching the current Microsoft Learn example format as of August 18, 2026.
 - Event IDs `4` and `16` are not filterable through Sysmon XML.
 - Event ID `23` is intentionally omitted because `sysmonsim-go` treats it as an invalid simulator ID.
+- Some Sysmon event types expose better filter fields than others. `WmiEvent`, `DriverLoad`, `ClipboardChange`, and `ProcessTampering` are narrower than before, but still less precise than the file, registry, and process-centric event filters.
 - If your local Sysmon build rejects `FileDeleteDetected`, run `sysmon64.exe -s` and update the schema version to match your installed binary.
 
 ## Usage
