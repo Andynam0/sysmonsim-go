@@ -2,6 +2,14 @@
 
 `sysmonsim-go` is a Go replacement for the abandoned SysmonSimulator project. It now uses Sysmon-style event IDs on the command line so the operator experience is closer to the original tool, while still keeping the test artifacts overridable at runtime.
 
+## Status
+
+This repository is not planned for ongoing maintenance. It was produced from a quick coding session and is being shared as-is for reference and lab use.
+
+## Warning
+
+`--dangerous` options are expected to be detected by EDR and may cause the executable or related artifacts to be quarantined, blocked, or deleted. Use them only in an isolated lab where that outcome is acceptable.
+
 ## Goals
 
 - Avoid hardcoded domains, registry keys, file paths, and child commands.
@@ -203,3 +211,4 @@ bin\sysmonsim-go.exe -e 22 --domain lab.example --count 10 --sleep-ms 1500
 - `-e 25` is invasive and therefore gated by `--dangerous`.
 - `process-create` uses a plain quoted argument string and splits on whitespace. For complex quoting, pass a shell as `--command` and keep `--command-args` simple.
 - This project aims for operator-controlled simulation, not stealth or anti-analysis behavior.
+- Running `--dangerous` scenarios can trigger EDR prevention or quarantine actions against the simulator, helper scripts, or spawned child processes.
