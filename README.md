@@ -118,6 +118,7 @@ Notes:
 - On a 2026-era Windows build, confirm the feature is present with `Enable-WindowsOptionalFeature` and `sysmon -s` before assuming the built-in path is available.
 - Built-in Sysmon doesn't support coexistence with standalone Sysmon.
 - The included XML is intentionally narrower than a normal enterprise Sysmon config. It focuses on `sysmonsim-go.exe`, its default helper processes such as `cmd.exe`, `ping.exe`, `powershell.exe`, and `notepad.exe`, plus artifact paths containing `\sysmonsim-go\`.
+- The included XML assumes the simulator executable name contains `sysmonsim` at a minimum. Variants like `sysmonsim-go.exe` and `sysmonsim_go.exe` will match, but unrelated names will not.
 - If you override simulator defaults, you may need to update the XML to match your custom process names, DLLs, domains, registry paths, or pipe names.
 
 Apply it during install:
