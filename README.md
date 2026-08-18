@@ -12,16 +12,16 @@
 
 The primary interface is:
 
-```powershell
-.\bin\sysmonsim-go.exe -e <event_id> [options]
+```cmd
+bin\sysmonsim-go.exe -e <event_id> [options]
 ```
 
 Examples:
 
-```powershell
-.\bin\sysmonsim-go.exe -e 1 --command "cmd.exe" --command-args "/c whoami"
-.\bin\sysmonsim-go.exe -e 13 --registry-hive HKCU --registry-key "Software\Acme\Test" --registry-value-name Beacon --registry-string-data "enabled"
-.\bin\sysmonsim-go.exe -e 22 --domain suspicious.example
+```cmd
+bin\sysmonsim-go.exe -e 1 --command "cmd.exe" --command-args "/c whoami"
+bin\sysmonsim-go.exe -e 13 --registry-hive HKCU --registry-key "Software\Acme\Test" --registry-value-name Beacon --registry-string-data "enabled"
+bin\sysmonsim-go.exe -e 22 --domain suspicious.example
 ```
 
 ## Event coverage
@@ -62,77 +62,70 @@ The exact visibility still depends on your Sysmon configuration and whatever EDR
 
 ## Build
 
-```powershell
+```cmd
 cd C:\path\to\sysmonsim-go
 go mod tidy
-go build -o .\bin\sysmonsim-go.exe .
+go build -o bin\sysmonsim-go.exe .
 ```
 
 ## Usage
 
 ### DNS
 
-```powershell
-.\bin\sysmonsim-go.exe -e 22 --domain updates.badexample.test --verbose
+```cmd
+bin\sysmonsim-go.exe -e 22 --domain updates.badexample.test --verbose
 ```
 
 ### Registry
 
-```powershell
-.\bin\sysmonsim-go.exe -e 13 `
-  --registry-hive HKCU `
-  --registry-key "Software\Acme\Test" `
-  --registry-value-name Beacon `
-  --registry-value-type string `
-  --registry-string-data "enabled"
+```cmd
+bin\sysmonsim-go.exe -e 13 --registry-hive HKCU --registry-key "Software\Acme\Test" --registry-value-name Beacon --registry-value-type string --registry-string-data "enabled"
 ```
 
 ### File
 
-```powershell
-.\bin\sysmonsim-go.exe -e 11 `
-  --path "C:\Temp\sysmonsim-go\artifact.txt" `
-  --content "test artifact"
+```cmd
+bin\sysmonsim-go.exe -e 11 --path "C:\Temp\sysmonsim-go\artifact.txt" --content "test artifact"
 ```
 
 ### Network
 
-```powershell
-.\bin\sysmonsim-go.exe -e 3 --host 198.51.100.10 --port 443
+```cmd
+bin\sysmonsim-go.exe -e 3 --host 198.51.100.10 --port 443
 ```
 
 ### Process
 
-```powershell
-.\bin\sysmonsim-go.exe -e 1 --command "cmd.exe" --command-args "/c whoami"
+```cmd
+bin\sysmonsim-go.exe -e 1 --command "cmd.exe" --command-args "/c whoami"
 ```
 
 ### Driver load guidance
 
-```powershell
-.\bin\sysmonsim-go.exe -e 6
-.\bin\sysmonsim-go.exe -e 6 --run-helper
+```cmd
+bin\sysmonsim-go.exe -e 6
+bin\sysmonsim-go.exe -e 6 --run-helper
 ```
 
 ### CreateRemoteThread
 
-```powershell
-.\bin\sysmonsim-go.exe -e 8 --dangerous
+```cmd
+bin\sysmonsim-go.exe -e 8 --dangerous
 ```
 
 ### Process tampering guidance
 
-```powershell
-.\bin\sysmonsim-go.exe -e 25
-.\bin\sysmonsim-go.exe -e 25 --run-helper
+```cmd
+bin\sysmonsim-go.exe -e 25
+bin\sysmonsim-go.exe -e 25 --run-helper
 ```
 
 ## Repetition
 
 Any scenario can be repeated:
 
-```powershell
-.\bin\sysmonsim-go.exe -e 22 --domain lab.example --count 10 --sleep-ms 1500
+```cmd
+bin\sysmonsim-go.exe -e 22 --domain lab.example --count 10 --sleep-ms 1500
 ```
 
 ## Design notes
