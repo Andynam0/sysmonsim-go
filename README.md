@@ -56,7 +56,7 @@ These map roughly onto common Sysmon coverage areas:
 - Some are implemented directly now.
 - `6` is guided/manual with an optional helper script.
 - `8` is implemented behind `--dangerous`.
-- `25` is guided/helper-driven because safe userland simulation is not straightforward.
+- `25` is available behind `--dangerous`, with `--run-helper` still available for lab guidance.
 
 The exact visibility still depends on your Sysmon configuration and whatever EDR rules exist on the endpoint.
 
@@ -67,6 +67,73 @@ cd C:\path\to\sysmonsim-go
 go mod tidy
 go build -o bin\sysmonsim-go.exe .
 ```
+
+## Sysmon config
+
+The repo includes a default lab config at `config\sysmon-sysmonsim-go.xml`. It is meant to favor visibility for `sysmonsim-go` testing rather than noise reduction.
+
+### Enable built-in Sysmon on modern Windows
+
+Microsoft documents built-in Sysmon as an optional Windows feature for Windows 11 as of February 24, 2026. Use an elevated PowerShell window:
+
+```powershell
+Get-Service sysmon*
+Enable-WindowsOptionalFeature -Online -FeatureName Sysmon
+sysmon -accepteula -i
+```
+
+If you want to install built-in Sysmon and apply this repo's config in one step:
+
+```powershell
+cd C:\path\to\sysmonsim-go
+sysmon -accepteula -i config\sysmon-sysmonsim-go.xml
+```
+
+If Sysmon is already installed, apply or update the config with:
+
+```powershell
+cd C:\path\to\sysmonsim-go
+sysmon -c config\sysmon-sysmonsim-go.xml
+```
+
+Useful verification and maintenance commands:
+
+```powershell
+sysmon -c
+sysmon -s
+Get-WinEvent -LogName "Microsoft-Windows-Sysmon/Operational" -MaxEvents 5
+```
+
+Notes:
+
+- Microsoft Learn currently documents the built-in optional-feature flow for Windows 11, not a separate Windows Server 2026 article.
+- On a 2026-era Windows build, confirm the feature is present with `Enable-WindowsOptionalFeature` and `sysmon -s` before assuming the built-in path is available.
+- Built-in Sysmon doesn't support coexistence with standalone Sysmon.
+
+Apply it during install:
+
+```cmd
+sysmon64.exe -accepteula -i config\sysmon-sysmonsim-go.xml
+```
+
+Or reconfigure an existing install:
+
+```cmd
+sysmon64.exe -c config\sysmon-sysmonsim-go.xml
+```
+
+Verify the active config:
+
+```cmd
+sysmon64.exe -c
+```
+
+Notes:
+
+- The config uses `schemaversion="4.90"`, matching the current Microsoft Learn example format as of August 18, 2026.
+- Event IDs `4` and `16` are not filterable through Sysmon XML.
+- Event ID `23` is intentionally omitted because `sysmonsim-go` treats it as an invalid simulator ID.
+- If your local Sysmon build rejects `FileDeleteDetected`, run `sysmon64.exe -s` and update the schema version to match your installed binary.
 
 ## Usage
 
@@ -116,7 +183,7 @@ bin\sysmonsim-go.exe -e 8 --dangerous
 ### Process tampering guidance
 
 ```cmd
-bin\sysmonsim-go.exe -e 25
+bin\sysmonsim-go.exe -e 25 --dangerous
 bin\sysmonsim-go.exe -e 25 --run-helper
 ```
 
@@ -133,6 +200,6 @@ bin\sysmonsim-go.exe -e 22 --domain lab.example --count 10 --sleep-ms 1500
 - Windows-specific implementations live behind build tags so you can still cross-build from WSL.
 - `-e 6` mirrors the old simulator approach by guiding you through a real driver-load prerequisite instead of pretending a normal process can fake it.
 - `-e 8` is invasive and therefore gated by `--dangerous`.
-- `-e 25` is helper-driven guidance at the moment.
+- `-e 25` is invasive and therefore gated by `--dangerous`.
 - `process-create` uses a plain quoted argument string and splits on whitespace. For complex quoting, pass a shell as `--command` and keep `--command-args` simple.
 - This project aims for operator-controlled simulation, not stealth or anti-analysis behavior.
