@@ -5,27 +5,108 @@
   <CopyOnDeletePE>true</CopyOnDeletePE>
 
   <EventFiltering>
-    <!-- Windows-first lab config for sysmonsim-go coverage -->
-    <!-- Event IDs 4 and 16 are not filterable in Sysmon config -->
-    <!-- Event ID 23 is intentionally omitted because sysmonsim-go does not simulate it -->
+    <!-- Narrowed lab config for sysmonsim-go coverage -->
+    <!-- This prefers simulator-related telemetry over full host coverage. -->
+    <!-- Event IDs 4 and 16 are not filterable in Sysmon config. -->
+    <!-- Event ID 23 is intentionally omitted because sysmonsim-go treats it as invalid. -->
+    <!-- Sysmon include rules use OR for repeated same-field entries and AND across different fields. -->
 
-    <ProcessCreate onmatch="include" />
-    <FileCreateTime onmatch="include" />
-    <NetworkConnect onmatch="include" />
-    <ProcessTerminate onmatch="include" />
-    <DriverLoad onmatch="include" />
-    <ImageLoad onmatch="include" />
-    <CreateRemoteThread onmatch="include" />
-    <RawAccessRead onmatch="include" />
-    <ProcessAccess onmatch="include" />
-    <FileCreate onmatch="include" />
-    <RegistryEvent onmatch="include" />
-    <FileCreateStreamHash onmatch="include" />
-    <PipeEvent onmatch="include" />
-    <WmiEvent onmatch="include" />
-    <DnsQuery onmatch="include" />
-    <ClipboardChange onmatch="include" />
-    <ProcessTampering onmatch="include" />
-    <FileDeleteDetected onmatch="include" />
+    <ProcessCreate onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+      <Image condition="image">cmd.exe</Image>
+      <Image condition="image">ping.exe</Image>
+      <Image condition="image">powershell.exe</Image>
+      <Image condition="image">notepad.exe</Image>
+      <CommandLine condition="contains">sysmonsim-go</CommandLine>
+      <CommandLine condition="contains">\sysmonsim-go\</CommandLine>
+    </ProcessCreate>
+
+    <FileCreateTime onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+      <TargetFilename condition="contains">\sysmonsim-go\</TargetFilename>
+    </FileCreateTime>
+
+    <NetworkConnect onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+      <Image condition="image">ping.exe</Image>
+      <Image condition="image">cmd.exe</Image>
+    </NetworkConnect>
+
+    <ProcessTerminate onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+      <Image condition="image">cmd.exe</Image>
+      <Image condition="image">ping.exe</Image>
+      <Image condition="image">notepad.exe</Image>
+    </ProcessTerminate>
+
+    <DriverLoad onmatch="include">
+      <ImageLoaded condition="end with">WdNisDrv.sys</ImageLoaded>
+      <ImageLoaded condition="contains">\sysmonsim-go\</ImageLoaded>
+    </DriverLoad>
+
+    <ImageLoad onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+      <Image condition="image">ping.exe</Image>
+      <ImageLoaded condition="end with">kernel32.dll</ImageLoaded>
+      <ImageLoaded condition="end with">user32.dll</ImageLoaded>
+    </ImageLoad>
+
+    <CreateRemoteThread onmatch="include">
+      <SourceImage condition="contains">sysmonsim</SourceImage>
+      <TargetImage condition="image">ping.exe</TargetImage>
+    </CreateRemoteThread>
+
+    <RawAccessRead onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+    </RawAccessRead>
+
+    <ProcessAccess onmatch="include">
+      <SourceImage condition="contains">sysmonsim</SourceImage>
+    </ProcessAccess>
+
+    <FileCreate onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+      <TargetFilename condition="contains">\sysmonsim-go\</TargetFilename>
+    </FileCreate>
+
+    <RegistryEvent onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+      <TargetObject condition="contains">\Software\sysmonsim-go</TargetObject>
+    </RegistryEvent>
+
+    <FileCreateStreamHash onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+      <TargetFilename condition="contains">\sysmonsim-go\</TargetFilename>
+    </FileCreateStreamHash>
+
+    <PipeEvent onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+      <PipeName condition="contains">\pipe\sysmonsim-go</PipeName>
+    </PipeEvent>
+
+    <WmiEvent onmatch="include">
+      <User condition="contains">SYSTEM</User>
+      <Name condition="contains">Win32_Process</Name>
+    </WmiEvent>
+
+    <DnsQuery onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+      <Image condition="image">ping.exe</Image>
+      <QueryName condition="contains">example</QueryName>
+    </DnsQuery>
+
+    <ClipboardChange onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+    </ClipboardChange>
+
+    <ProcessTampering onmatch="include">
+      <Image condition="image">cmd.exe</Image>
+      <Image condition="image">notepad.exe</Image>
+    </ProcessTampering>
+
+    <FileDeleteDetected onmatch="include">
+      <Image condition="contains">sysmonsim</Image>
+      <TargetFilename condition="contains">\sysmonsim-go\</TargetFilename>
+    </FileDeleteDetected>
   </EventFiltering>
 </Sysmon>
