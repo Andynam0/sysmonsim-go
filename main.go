@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -81,6 +82,7 @@ func main() {
 		if err := runEvent(cfg); err != nil {
 			exitf("event %d failed: %v", cfg.eventID, err)
 		}
+		fmt.Println(successMessage(cfg))
 
 		if i < cfg.count-1 && cfg.sleep > 0 {
 			time.Sleep(cfg.sleep)
@@ -143,8 +145,8 @@ func parseFlags(args []string) (config, string, error) {
 	fs.StringVar(&cfg.injectDLL, "inject-dll", `C:\Windows\System32\user32.dll`, "DLL path used by event 8 LoadLibrary-style remote thread injection")
 	fs.StringVar(&cfg.wmiCommand, "wmi-command", "cmd.exe /c echo sysmonsim-go", "Command line for WMI event simulations")
 	fs.StringVar(&cfg.wmiNamespace, "wmi-namespace", `root\cimv2`, "WMI namespace for events 19, 20, and 21")
-	fs.StringVar(&cfg.tamperTarget, "tamper-target", `C:\Windows\System32\svchost.exe`, "Target image path for event 25 guidance")
-	fs.StringVar(&cfg.tamperSource, "tamper-source", `C:\Windows\System32\cmd.exe`, "Source image path for event 25 guidance")
+	fs.StringVar(&cfg.tamperTarget, "tamper-target", `C:\Windows\System32\notepad.exe`, "Target image path for event 25 tampering")
+	fs.StringVar(&cfg.tamperSource, "tamper-source", `C:\Windows\System32\cmd.exe`, "Source image path for event 25 tampering")
 
 	if err := fs.Parse(args); err != nil {
 		return cfg, renderFlagDefaults(fs), err
@@ -214,6 +216,9 @@ func validateConfig(cfg config) error {
 		if strings.TrimSpace(cfg.command) == "" {
 			return errors.New("--command cannot be empty")
 		}
+		if _, err := resolveCommand(cfg.command); err != nil {
+			return fmt.Errorf("cannot resolve command %q: %w", cfg.command, err)
+		}
 	case 2, 11, 15, 26:
 		if strings.TrimSpace(cfg.path) == "" {
 			return fmt.Errorf("--path is required for event %d", cfg.eventID)
@@ -278,7 +283,7 @@ func validateConfig(cfg config) error {
 			return errors.New("--tamper-target and --tamper-source cannot be empty")
 		}
 	case 4, 23:
-		return fmt.Errorf("event %d is not a Sysmon event ID", cfg.eventID)
+		return fmt.Errorf("invalid Sysmon ID %d", cfg.eventID)
 	default:
 		return fmt.Errorf("unsupported event ID %d", cfg.eventID)
 	}
@@ -315,7 +320,7 @@ func usageText(flagHelp string) string {
 		` 21  WMI Consumer-Filter Binding (Default: root\cimv2 cmd.exe /c echo sysmonsim-go)`,
 		` 22  DNS Query (Default: example.org)`,
 		` 24  Clipboard Change (Default: "sysmonsim-go clipboard test")`,
-		` 25  Process Tampering (Default: guided/helper, cmd.exe -> svchost.exe)`,
+		` 25  Process Tampering (Default: dangerous opt-in, cmd.exe -> notepad.exe)`,
 		` 26  File Delete (Default: %TEMP%\sysmonsim-go\event26_delete.txt)`,
 	}
 
@@ -337,7 +342,7 @@ Examples:
   sysmonsim-go.exe -e 17 --pipe-name \\.\pipe\sysmonsim-demo
   sysmonsim-go.exe -e 6 --run-helper
   sysmonsim-go.exe -e 8 --dangerous
-  sysmonsim-go.exe -e 25 --run-helper
+  sysmonsim-go.exe -e 25 --dangerous
 
 Options:
 %s
@@ -347,6 +352,78 @@ Options:
 func exitf(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 	os.Exit(1)
+}
+
+func successMessage(cfg config) string {
+	switch cfg.eventID {
+	case 1:
+		if cfg.waitForExit {
+			return fmt.Sprintf("Event 1 complete: process created and exited: %s %s", cfg.command, strings.Join(cfg.commandArgs, " "))
+		}
+		return fmt.Sprintf("Event 1 complete: process created: %s %s", cfg.command, strings.Join(cfg.commandArgs, " "))
+	case 2:
+		return fmt.Sprintf("Event 2 complete: file creation time changed: %s", cfg.path)
+	case 3:
+		return fmt.Sprintf("Event 3 complete: network connection attempted: %s:%d", cfg.host, cfg.port)
+	case 5:
+		return fmt.Sprintf("Event 5 complete: process created and terminated: %s", cfg.command)
+	case 6:
+		if cfg.runHelper {
+			return "Event 6 complete: driver-load helper executed."
+		}
+		return "Event 6 complete: driver-load guidance displayed."
+	case 7:
+		return fmt.Sprintf("Event 7 complete: image loaded: %s", cfg.libraryPath)
+	case 8:
+		if cfg.dangerous {
+			if cfg.targetPID != 0 {
+				return fmt.Sprintf("Event 8 complete: remote thread created in PID %d using %s", cfg.targetPID, cfg.injectDLL)
+			}
+			return fmt.Sprintf("Event 8 complete: remote thread created in %s using %s", cfg.targetProcess, cfg.injectDLL)
+		}
+		return "Event 8 complete: dangerous-operation guidance displayed."
+	case 9:
+		return fmt.Sprintf("Event 9 complete: raw disk read attempted: %s", cfg.rawDiskPath)
+	case 10:
+		if cfg.targetPID != 0 {
+			return fmt.Sprintf("Event 10 complete: process access attempted on PID %d", cfg.targetPID)
+		}
+		return "Event 10 complete: process access attempted on current process."
+	case 11:
+		return fmt.Sprintf("Event 11 complete: file created: %s", cfg.path)
+	case 12:
+		return fmt.Sprintf("Event 12 complete: registry key created and deleted: %s\\%s", cfg.regHive, cfg.regKey)
+	case 13:
+		return fmt.Sprintf("Event 13 complete: registry value set: %s\\%s [%s]", cfg.regHive, cfg.regKey, cfg.regValueName)
+	case 14:
+		return fmt.Sprintf("Event 14 complete: registry key renamed under: %s\\%s", cfg.regHive, cfg.regKey)
+	case 15:
+		return fmt.Sprintf("Event 15 complete: alternate data stream written: %s:%s", cfg.path, cfg.adsName)
+	case 16:
+		return fmt.Sprintf("Event 16 complete: service configuration changed: %s", cfg.serviceName)
+	case 17:
+		return fmt.Sprintf("Event 17 complete: named pipe created: %s", cfg.pipeName)
+	case 18:
+		return fmt.Sprintf("Event 18 complete: named pipe connected: %s", cfg.pipeName)
+	case 19, 20, 21:
+		return fmt.Sprintf("Event %d complete: WMI process creation attempted in %s", cfg.eventID, cfg.wmiNamespace)
+	case 22:
+		return fmt.Sprintf("Event 22 complete: DNS query attempted: %s", cfg.domain)
+	case 24:
+		return fmt.Sprintf("Event 24 complete: clipboard updated: %q", cfg.clipboardText)
+	case 25:
+		if cfg.dangerous {
+			return fmt.Sprintf("Event 25 complete: tamper helper executed: %s -> %s", cfg.tamperSource, cfg.tamperTarget)
+		}
+		if cfg.runHelper {
+			return "Event 25 complete: tampering guidance helper executed."
+		}
+		return "Event 25 complete: dangerous-operation guidance displayed."
+	case 26:
+		return fmt.Sprintf("Event 26 complete: file deleted: %s", cfg.path)
+	default:
+		return fmt.Sprintf("Event %d complete.", cfg.eventID)
+	}
 }
 
 func splitArgs(raw string) []string {
@@ -374,6 +451,20 @@ func indentBlock(text string, prefix string) string {
 		lines[i] = prefix + line
 	}
 	return strings.Join(lines, "\n")
+}
+
+func resolveCommand(command string) (string, error) {
+	command = strings.TrimSpace(command)
+	if command == "" {
+		return "", errors.New("empty command")
+	}
+	if strings.ContainsAny(command, `\/`) {
+		if _, err := os.Stat(command); err != nil {
+			return "", err
+		}
+		return command, nil
+	}
+	return exec.LookPath(command)
 }
 
 func eventName(eventID int) string {

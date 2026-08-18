@@ -62,7 +62,7 @@ func runEvent(cfg config) error {
 	case 26:
 		return runFileDelete(cfg)
 	default:
-		return fmt.Errorf("unsupported event ID %d", cfg.eventID)
+		return fmt.Errorf("invalid Sysmon ID %d", cfg.eventID)
 	}
 }
 
@@ -185,11 +185,25 @@ func runProcessTerminate(cfg config) error {
 	if err := cmd.Start(); err != nil {
 		return err
 	}
+	doneCh := make(chan error, 1)
+	go func() {
+		doneCh <- cmd.Wait()
+	}()
 	time.Sleep(cfg.killAfter)
+
+	select {
+	case <-doneCh:
+		if cfg.verbose {
+			fmt.Printf("process-terminate pid=%d exited_before_kill=true\n", cmd.Process.Pid)
+		}
+		return nil
+	default:
+	}
+
 	if err := cmd.Process.Kill(); err != nil {
 		return err
 	}
-	_, _ = cmd.Process.Wait()
+	<-doneCh
 	if cfg.verbose {
 		fmt.Printf("process-terminate pid=%d kill_after=%s\n", cmd.Process.Pid, cfg.killAfter)
 	}
@@ -201,8 +215,4 @@ func ensureSeedFile(path string, content string) error {
 		return err
 	}
 	return os.WriteFile(path, []byte(content+"\r\n"), 0o644)
-}
-
-func notImplemented(eventID int, reason string) error {
-	return fmt.Errorf("event %d not implemented: %s", eventID, reason)
 }

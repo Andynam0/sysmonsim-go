@@ -360,16 +360,22 @@ func runProcessTamper(cfg config) error {
 	if cfg.runHelper {
 		return runHelperScript("prepare-event25-process-tamper.ps1")
 	}
-
-	fmt.Println("Event 25 usually needs a real process-hollowing or image-replacement style action.")
-	fmt.Println("This is not run by default.")
-	fmt.Printf("Suggested lab pair: source=%s target=%s\n", cfg.tamperSource, cfg.tamperTarget)
-	fmt.Println("To stage the lab helper and view prerequisites, run:")
-	fmt.Println(`  sysmonsim-go.exe -e 25 --run-helper`)
-	return nil
+	if !cfg.dangerous {
+		fmt.Println("Event 25 is intentionally gated.")
+		fmt.Println("It performs a real suspended-process tampering action against the target image entry point.")
+		fmt.Println("Re-run with --dangerous to execute it, or --run-helper for the lab guidance.")
+		fmt.Printf("Default source image: %s\n", cfg.tamperSource)
+		fmt.Printf("Default target image: %s\n", cfg.tamperTarget)
+		return nil
+	}
+	return runHelperScriptWithArgs("invoke-event25-process-tamper.ps1", cfg.tamperSource, cfg.tamperTarget)
 }
 
 func runHelperScript(name string) error {
+	return runHelperScriptWithArgs(name)
+}
+
+func runHelperScriptWithArgs(name string, args ...string) error {
 	exePath, err := os.Executable()
 	if err != nil {
 		return err
@@ -390,7 +396,9 @@ func runHelperScript(name string) error {
 	if helperPath == "" {
 		return fmt.Errorf("helper script not found; tried %s", strings.Join(candidates, ", "))
 	}
-	cmd := exec.Command("powershell.exe", "-ExecutionPolicy", "Bypass", "-File", helperPath)
+	commandArgs := []string{"-ExecutionPolicy", "Bypass", "-File", helperPath}
+	commandArgs = append(commandArgs, args...)
+	cmd := exec.Command("powershell.exe", commandArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
