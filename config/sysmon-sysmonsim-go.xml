@@ -5,10 +5,10 @@
   <CopyOnDeletePE>true</CopyOnDeletePE>
 
   <EventFiltering>
-    <!-- Narrowed lab config for sysmonsim-go coverage -->
+    <!-- Narrowed lab config for sysmonsim coverage -->
     <!-- This prefers simulator-related telemetry over full host coverage. -->
     <!-- Event IDs 4 and 16 are not filterable in Sysmon config. -->
-    <!-- Event ID 23 is intentionally omitted because sysmonsim-go treats it as invalid. -->
+    <!-- Event ID 23 is intentionally omitted because sysmonsim treats it as invalid. -->
     <!-- Sysmon include rules use OR for repeated same-field entries and AND across different fields. -->
 
     <ProcessCreate onmatch="include">
@@ -18,12 +18,12 @@
       <Image condition="image">powershell.exe</Image>
       <Image condition="image">notepad.exe</Image>
       <CommandLine condition="contains">sysmonsim</CommandLine>
-      <CommandLine condition="contains">\sysmonsim-go\</CommandLine>
+      <CommandLine condition="contains">\sysmonsim\</CommandLine>
     </ProcessCreate>
 
     <FileCreateTime onmatch="include">
       <Image condition="contains">sysmonsim</Image>
-      <TargetFilename condition="contains">\sysmonsim-go\</TargetFilename>
+      <TargetFilename condition="contains">\sysmonsim\</TargetFilename>
     </FileCreateTime>
 
     <NetworkConnect onmatch="include">
@@ -41,7 +41,7 @@
 
     <DriverLoad onmatch="include">
       <ImageLoaded condition="end with">WdNisDrv.sys</ImageLoaded>
-      <ImageLoaded condition="contains">\sysmonsim-go\</ImageLoaded>
+      <ImageLoaded condition="contains">\sysmonsim\</ImageLoaded>
     </DriverLoad>
 
     <ImageLoad onmatch="include">
@@ -66,22 +66,22 @@
 
     <FileCreate onmatch="include">
       <Image condition="contains">sysmonsim</Image>
-      <TargetFilename condition="contains">\sysmonsim-go\</TargetFilename>
+      <TargetFilename condition="contains">\sysmonsim\</TargetFilename>
     </FileCreate>
 
     <RegistryEvent onmatch="include">
       <Image condition="contains">sysmonsim</Image>
-      <TargetObject condition="contains">\Software\sysmonsim-go</TargetObject>
+      <TargetObject condition="contains">\Software\sysmonsim</TargetObject>
     </RegistryEvent>
 
     <FileCreateStreamHash onmatch="include">
       <Image condition="contains">sysmonsim</Image>
-      <TargetFilename condition="contains">\sysmonsim-go\</TargetFilename>
+      <TargetFilename condition="contains">\sysmonsim\</TargetFilename>
     </FileCreateStreamHash>
 
     <PipeEvent onmatch="include">
       <Image condition="contains">sysmonsim</Image>
-      <PipeName condition="contains">\pipe\sysmonsim-go</PipeName>
+      <PipeName condition="contains">\pipe\sysmonsim</PipeName>
     </PipeEvent>
 
     <WmiEvent onmatch="include">
@@ -106,7 +106,7 @@
 
     <FileDeleteDetected onmatch="include">
       <Image condition="contains">sysmonsim</Image>
-      <TargetFilename condition="contains">\sysmonsim-go\</TargetFilename>
+      <TargetFilename condition="contains">\sysmonsim\</TargetFilename>
     </FileDeleteDetected>
   </EventFiltering>
 </Sysmon>
