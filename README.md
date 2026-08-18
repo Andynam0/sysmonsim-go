@@ -1,5 +1,9 @@
 # sysmonsim-go
 
+<p align="center">
+  <img src="sysmonSimGo.png" alt="sysmonsim-go logo" width="160">
+</p>
+
 `sysmonsim-go` is a Go replacement for the abandoned SysmonSimulator project. It now uses Sysmon-style event IDs on the command line so the operator experience is closer to the original tool, while still keeping the test artifacts overridable at runtime.
 
 ## Status
